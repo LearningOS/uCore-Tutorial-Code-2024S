@@ -5,7 +5,7 @@ SHELL := /bin/bash
 DOCKER_NAME ?= uCore-RV-64-Base
 DIR := workplace
 
-test: test2
+test: test1 test2
 
 lab1: test3
 
@@ -19,46 +19,51 @@ lab5: test8
 
 
 test1:
-	git checkout ch1 && make run
+	git fetch
+	git checkout ch1
+	make run
 
 test2:
-	git checkout ch2 && git clone https://github.com/LearningOS/uCore-Tutorial-Test-2022S.git user && make test BASE=1
+	git fetch
+	git checkout ch2
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
+	make test BASE=1
 	
 test3:
-	git submodule init
-	git submodule update
-	cp -r uCore-RV-64-test uCore-RV-64-lab/user
-	cd uCore-RV-64-lab && git checkout ch3 && make test BASE=1
+	git fetch
+	git checkout ch3
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
+	make test BASE=1
 	
 test4:
-	git submodule init
-	git submodule update
-	cp -r uCore-RV-64-test uCore-RV-64-lab/user
-	cd uCore-RV-64-lab && git checkout ch4 && make test BASE=1
+	git fetch
+	git checkout ch4
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
+	make test BASE=1
 	
 test5:
-	git submodule init
-	git submodule update
-	cp -r uCore-RV-64-test uCore-RV-64-lab/user
-	cd uCore-RV-64-lab && git checkout ch5 && make test BASE=1
+	git fetch
+	git checkout ch5
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
+	make test BASE=1
 
 test6:
-	git submodule init
-	git submodule update
-	cp -r uCore-RV-64-test uCore-RV-64-lab/user
-	cd uCore-RV-64-lab && git checkout ch6 && make test BASE=1
+	git fetch
+	git checkout ch6
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
+	make test BASE=1
 	
 test7:
-	git submodule init
-	git submodule update
-	cp -r uCore-RV-64-test uCore-RV-64-lab/user
-	cd uCore-RV-64-lab && git checkout ch7 && make test BASE=1
+	git fetch
+	git checkout ch7
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
+	make test BASE=1
 	
 test8:
-	git submodule init
-	git submodule update
-	cp -r uCore-RV-64-test uCore-RV-64-lab/user
-	cd uCore-RV-64-lab && git checkout ch8 && make test BASE=1
+	git fetch
+	git checkout ch8 
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
+	make test BASE=1
 
 clean:
 	rm -rf ${DIR}
