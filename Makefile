@@ -22,7 +22,7 @@ test1:
 	git checkout ch1 && make run
 
 test2:
-	git checkout ch2 && make test BASE=1
+	git checkout ch2 && git clone https://github.com/LearningOS/uCore-Tutorial-Test-2022S.git user && make test BASE=1
 	
 test3:
 	git submodule init
