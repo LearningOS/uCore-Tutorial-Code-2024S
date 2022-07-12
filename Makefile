@@ -70,9 +70,12 @@ docker:
 
 setclassroom:
 	mkdir -p .github/workflows
+	mkdir -p .github/classroom
 	touch .github/.keep
 	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding.json .github/classroom/autograding.json
 	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
 	git add .github/.keep
 	git commit -m"update classroom.yml .keep for classroom CI test"
 	git push
