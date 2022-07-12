@@ -1,0 +1,64 @@
+name: GitHub Classroom Workflow
+
+on: [push]
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  build:
+    name: Autograding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install  Riscv Toolchain
+        run: |
+          cd /usr/local
+          sudo wget https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.08/riscv64-unknown-elf-gcc-10.1.0-2020.08.2-x86_64-linux-ubuntu14.tar.gz
+          sudo tar xzf riscv64-unknown-elf-gcc-10.1.0-2020.08.2-x86_64-linux-ubuntu14.tar.gz
+          sudo mv riscv64-unknown-elf-gcc-10.1.0-2020.08.2-x86_64-linux-ubuntu14 riscv64-unknown-elf-gcc
+          sudo wget -O riscv64-linux-musl-cross.tgz https://cloud.tsinghua.edu.cn/f/b07bac9bcfa14f1dae66/?dl=1
+          sudo tar xzf riscv64-linux-musl-cross.tgz
+      - name: Config Riscv Path   
+        run: |
+          sudo ln -s /usr/local/riscv64-unknown-elf-gcc/bin/* /usr/bin
+          sudo ln -s /usr/local/riscv64-linux-musl-cross/bin/* /usr/bin
+      - name: Install compile env
+        run: |
+          sudo apt install -y cmake
+          sudo apt update -y
+          sudo apt upgrade -y
+          sudo apt install -y autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev \
+                        gawk build-essential bison flex texinfo gperf libtool patchutils bc \
+                        zlib1g-dev libexpat-dev pkg-config  libglib2.0-dev libpixman-1-dev git tmux python3
+      - name: Cache QEMU
+        uses: actions/cache@v3
+        with:
+          path: qemu-5.0.0
+          key: qemu-5.0.0-x86_64-riscv64
+      - name: Install QEMU
+        run: |
+          if [ ! -d qemu-5.0.0 ]; then
+            sudo wget https://download.qemu.org/qemu-5.0.0.tar.xz
+            sudo tar xJf qemu-5.0.0.tar.xz
+            cd qemu-5.0.0
+            sudo ./configure --target-list=riscv64-softmmu,riscv64-linux-user
+            sudo make -j$(nproc)
+          else
+            cd qemu-5.0.0
+          fi
+          sudo make install
+          qemu-system-riscv64 --version
+      - name: Config Path
+        run: |
+          sudo touch /home/.bashrc
+          sudo chmod 777 /home/.bashrc
+          sudo echo "export PATH=\"qemu-5.0.0:\$PATH\"" >> /home/.bashrc
+          sudo echo "export PATH=\"qemu-5.0.0/riscv64-softmmu:\$PATH\"" >> /home/.bashrc
+          sudo echo "export PATH=\"qemu-5.0.0/riscv64-linux-user:\$PATH\"" >> /home/.bashrc
+          source /home/.bashrc
+          qemu-system-riscv64 --version
+          qemu-riscv64 --version
+      - uses: education/autograding@v1
