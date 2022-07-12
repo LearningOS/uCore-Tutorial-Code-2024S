@@ -69,6 +69,7 @@ docker:
 
 
 setclassroom:
+	mkdir -p .github/workflows
 	touch .github/.keep
 	cp scripts/classroom.yml .github/workflows/classroom.yml
 	git add .github/workflows/classroom.yml
