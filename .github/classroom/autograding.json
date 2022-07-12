@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Base test",
+      "setup": "",
+      "run": "make test",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 10,
+      "points": 100
+    }
+  ]
+}
