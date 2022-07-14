@@ -5,6 +5,8 @@ SHELL := /bin/bash
 DOCKER_NAME ?= uCore-RV-64-Base
 DIR := workplace
 
+run: test
+
 test: test1 test2
 
 lab1: test3
@@ -26,43 +28,36 @@ test1:
 test2:
 	git fetch
 	git checkout ch2
-	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
 	make test BASE=1
 	
 test3:
 	git fetch
 	git checkout ch3
-	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
 	make test BASE=1
 	
 test4:
 	git fetch
 	git checkout ch4
-	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
 	make test BASE=1
 	
 test5:
 	git fetch
 	git checkout ch5
-	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
 	make test BASE=1
 
 test6:
 	git fetch
 	git checkout ch6
-	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
 	make test BASE=1
 	
 test7:
 	git fetch
 	git checkout ch7
-	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
 	make test BASE=1
 	
 test8:
 	git fetch
 	git checkout ch8 
-	git clone https://github.com/uCore-RV-64/uCore-RV-64-test.git user
 	make test BASE=1
 
 clean:
@@ -79,6 +74,126 @@ setclassroom:
 	touch .github/.keep
 	cp scripts/classroom.yml .github/workflows/classroom.yml
 	cp scripts/autograding.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+
+setclassroom1:
+	git checkout ch1
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding0.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding0.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+
+setclassroom2:
+	git checkout ch2
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding1.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding1.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+
+setclassroom3:
+	git checkout ch3
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding1.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding1.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+	
+setclassroom4:
+	git checkout ch4
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding1.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding1.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+
+setclassroom5:
+	git checkout ch5
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding1.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding1.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+
+setclassroom6:
+	git checkout ch6
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding1.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding1.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+
+setclassroom7:
+	git checkout ch7
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding1.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding1.json .github/classroom/autograding.json
+	git add .github/workflows/classroom.yml
+	git add .github/classroom/autograding.json
+	git add .github/.keep
+	git commit -m"update classroom.yml .keep for classroom CI test"
+	git push
+
+setclassroom8:
+	git checkout ch8
+	git checkout master -- scripts/classroom.yml
+	git checkout master -- scripts/autograding1.json
+	mkdir -p .github/workflows
+	mkdir -p .github/classroom
+	touch .github/.keep
+	cp scripts/classroom.yml .github/workflows/classroom.yml
+	cp scripts/autograding1.json .github/classroom/autograding.json
 	git add .github/workflows/classroom.yml
 	git add .github/classroom/autograding.json
 	git add .github/.keep
