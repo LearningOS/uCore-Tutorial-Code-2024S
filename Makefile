@@ -73,7 +73,7 @@ setclassroom:
 	mkdir -p .github/classroom
 	touch .github/.keep
 	cp scripts/classroom.yml .github/workflows/classroom.yml
-	cp scripts/autograding.json .github/classroom/autograding.json
+	cp scripts/autograding0.json .github/classroom/autograding.json
 	git add .github/workflows/classroom.yml
 	git add .github/classroom/autograding.json
 	git add .github/.keep
