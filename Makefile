@@ -82,33 +82,31 @@ setclassroom:
 
 setclassroom1:
 	git checkout ch1
-	git checkout master -- scripts/classroom.yml
-	git checkout master -- scripts/autograding0.json
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-conf.git scripts
+	#git checkout master -- scripts/classroom.yml
+	#git checkout master -- scripts/autograding0.json
 	mkdir -p .github/workflows
 	mkdir -p .github/classroom
 	touch .github/.keep
 	cp scripts/classroom.yml .github/workflows/classroom.yml
 	cp scripts/autograding0.json .github/classroom/autograding.json
-	git add .github/workflows/classroom.yml
-	git add .github/classroom/autograding.json
-	git add .github/.keep
-	git commit -m"update classroom.yml .keep for classroom CI test"
-	git push
+	git add .
+	#git commit -m"update classroom.yml .keep for classroom CI test"
+	#git push
 
 setclassroom2:
 	git checkout ch2
-	git checkout master -- scripts/classroom.yml
-	git checkout master -- scripts/autograding1.json
+	git clone https://github.com/uCore-RV-64/uCore-RV-64-conf.git scripts
+	#git checkout master -- scripts/classroom.yml
+	#git checkout master -- scripts/autograding1.json
 	mkdir -p .github/workflows
 	mkdir -p .github/classroom
 	touch .github/.keep
 	cp scripts/classroom.yml .github/workflows/classroom.yml
 	cp scripts/autograding1.json .github/classroom/autograding.json
-	git add .github/workflows/classroom.yml
-	git add .github/classroom/autograding.json
-	git add .github/.keep
-	git commit -m"update classroom.yml .keep for classroom CI test"
-	git push
+	git add .
+	#git commit -m"update classroom.yml .keep for classroom CI test"
+	#git push
 
 setclassroom3:
 	git checkout ch3
