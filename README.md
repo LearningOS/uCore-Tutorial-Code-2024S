@@ -8,8 +8,6 @@ Course project for THU-OS.
 
 实验 lab1-lab5 基准代码分别位于 ch3-ch8　分支下。
 
-实验在线文档[uCore-RV-64-doc](https://ucore-rv-64.github.io/uCore-RV-64-doc/)
-
-本仓库内容可以配合classroom使用，需要在对应分支进行提交应在默认分支下建立对应的classroom环境，例如需要在ch2分支建立环境，则执行命令：make setclassroom2。
+实验在线文档[uCore-RV-64-doc](https://ucore-rv-64.github.io/uCore-RV-64-doc/)。
 
 注：为了兼容清华 Git 的需求、避免同学在主分支写代码、明确主分支的功能性，特意单独建了仅包含 README 与 LICENSE 的 master 分支，完成课程实验时请在 clone 仓库后先 push master 分支到清华 Git，然后切到自己开发所需的分支进行后续操作。
