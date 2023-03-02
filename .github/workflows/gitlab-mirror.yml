@@ -1,0 +1,22 @@
+name: Mirror and run GitLab CI
+
+on:
+  push:
+    branches:
+      - 'ch[0-9]'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Mirror + trigger CI
+      uses: Gallium70/gitlab-mirror-and-ci-action@master
+      with:
+        args: "https://git.tsinghua.edu.cn/os-lab/2023s/public/ucore-tutorial-code-2023s"
+      env:
+        GITLAB_HOSTNAME: "git.tsinghua.edu.cn"
+        GITLAB_PROJECT_ID: "20789"
+        GITLAB_PROJECT_NAME: "ucore-tutorial-code-2023s"
+        GITLAB_PROJECT_TOKEN: ${{secrets.GITLAB_PROJECT_TOKEN}}
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

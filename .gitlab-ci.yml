@@ -1,0 +1,12 @@
+default:
+  image: duskmoon/dev-env:ucore-ci
+
+stages:
+  - test
+
+test-code-job:
+  stage: test
+  script:
+    - git clone https://token:${UCORE_CHECKER_REPO_READ_TOKEN_2023S}@git.tsinghua.edu.cn/os-lab/2023s/ta/ucore-tutorial-checker-2023s.git ucore-tutorial-ci
+    - git clone https://token:${UCORE_TEST_REPO_READ_TOKEN_2023S}@git.tsinghua.edu.cn/os-lab/2023s/public/ucore-tutorial-test-2023s.git ucore-tutorial-ci/workplace/user
+    - cd ucore-tutorial-ci && make test CHAPTER=`echo $CI_COMMIT_REF_NAME | grep -oP 'ch\K[0-9]'`
