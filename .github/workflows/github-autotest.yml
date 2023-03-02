@@ -1,0 +1,44 @@
+name: auto-test
+
+on:
+  push:
+
+jobs:
+  base-test:
+    runs-on: ubuntu-latest
+    outputs:
+      points: ${{ steps.end.outputs.points}}
+    container:
+        image: duskmoon/dev-env:ucore-ci
+    steps:
+      - uses: actions/checkout@v3
+      - run: git clone https://github.com/LearningOS/uCore-Tutorial-Checker-2023S.git ucore-tutorial-ci
+      - run: git clone https://github.com/LearningOS/uCore-Tutorial-Test-2023S.git ucore-tutorial-ci/workplace/user
+      - name: run test
+        id: tester
+        run: cd ucore-tutorial-ci && make test passwd=${{ secrets.BASE_TEST_TOKEN }} CHAPTER=`echo ${GITHUB_REF##*/} | grep -oP 'ch\K[0-9]'` | tee ../output.txt
+      - name: end
+        id: end
+        run: cat output.txt | grep "Test passed" | grep -oP "\d{1,}/\d{1,}" | xargs -i echo "points={}" >> $GITHUB_OUTPUT
+  deploy:
+    if: github.repository != 'LearningOS/uCore-Tutorial-Code-2023S'
+    name: Deploy to pages
+    needs: base-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        continue-on-error: true
+        with:
+          ref: 'gh-pages'
+      - name: Save Log File
+        uses: yfblock/multi-rank-log@main
+        with:
+          points: ${{ needs.base-test.outputs.points }}
+      - name: GitHub Pages
+        uses: crazy-max/ghaction-github-pages@v3
+        with:
+          target_branch: gh-pages
+          build_dir: ./public
+          keep_history: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
