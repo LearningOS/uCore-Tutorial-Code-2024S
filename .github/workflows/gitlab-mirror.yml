@@ -2,9 +2,8 @@ name: Mirror and run GitLab CI
 
 on:
   push:
-    breanches:
-      - '^ch[0-9]$'
-  workflow_dispatch:
+    branches:
+      - 'ch[0-9]'
 
 jobs:
   build:
