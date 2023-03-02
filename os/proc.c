@@ -2,11 +2,11 @@
 #include "defs.h"
 #include "loader.h"
 #include "trap.h"
+#include "vm.h"
 
 struct proc pool[NPROC];
-char kstack[NPROC][PAGE_SIZE];
-__attribute__((aligned(4096))) char ustack[NPROC][PAGE_SIZE];
-__attribute__((aligned(4096))) char trapframe[NPROC][PAGE_SIZE];
+__attribute__((aligned(16))) char kstack[NPROC][PAGE_SIZE];
+__attribute__((aligned(4096))) char trapframe[NPROC][TRAP_PAGE_SIZE];
 
 extern char boot_stack_top[];
 struct proc *current_proc;
@@ -29,7 +29,6 @@ void proc_init(void)
 	for (p = pool; p < &pool[NPROC]; p++) {
 		p->state = UNUSED;
 		p->kstack = (uint64)kstack[p - pool];
-		p->ustack = (uint64)ustack[p - pool];
 		p->trapframe = (struct trapframe *)trapframe[p - pool];
 		/*
 		* LAB1: you may need to initialize your new fields of proc here
@@ -62,11 +61,16 @@ struct proc *allocproc(void)
 found:
 	p->pid = allocpid();
 	p->state = USED;
+	p->pagetable = 0;
+	p->ustack = 0;
+	p->max_page = 0;
+	p->program_brk = 0;
+        p->heap_bottom = 0;
 	memset(&p->context, 0, sizeof(p->context));
-	memset(p->trapframe, 0, PAGE_SIZE);
-	memset((void *)p->kstack, 0, PAGE_SIZE);
+	memset((void *)p->kstack, 0, KSTACK_SIZE);
+	memset((void *)p->trapframe, 0, TRAP_PAGE_SIZE);
 	p->context.ra = (uint64)usertrapret;
-	p->context.sp = p->kstack + PAGE_SIZE;
+	p->context.sp = p->kstack + KSTACK_SIZE;
 	return p;
 }
 
@@ -114,12 +118,40 @@ void yield(void)
 	sched();
 }
 
+void freeproc(struct proc *p)
+{
+	p->state = UNUSED;
+	// uvmfree(p->pagetable, p->max_page);
+}
+
 // Exit the current process.
 void exit(int code)
 {
 	struct proc *p = curr_proc();
 	infof("proc %d exit with %d", p->pid, code);
-	p->state = UNUSED;
+	freeproc(p);
 	finished();
 	sched();
+}
+
+// Grow or shrink user memory by n bytes.
+// Return 0 on succness, -1 on failure.
+int growproc(int n)
+{
+        uint64 program_brk;
+        struct proc *p = curr_proc();
+        program_brk = p->program_brk;
+        int new_brk = program_brk + n - p->heap_bottom;
+        if(new_brk < 0){
+                return -1;
+        }
+        if(n > 0){
+                if((program_brk = uvmalloc(p->pagetable, program_brk, program_brk + n, PTE_W)) == 0) {
+                        return -1;
+                }
+        } else if(n < 0){
+                program_brk = uvmdealloc(p->pagetable, program_brk, program_brk + n);
+        }
+        p->program_brk = program_brk;
+        return 0;
 }

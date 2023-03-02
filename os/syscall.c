@@ -4,16 +4,21 @@
 #include "syscall_ids.h"
 #include "timer.h"
 #include "trap.h"
+#include "proc.h"
 
-uint64 sys_write(int fd, char *str, uint len)
+uint64 sys_write(int fd, uint64 va, uint len)
 {
-	debugf("sys_write fd = %d str = %x, len = %d", fd, str, len);
+	debugf("sys_write fd = %d va = %x, len = %d", fd, va, len);
 	if (fd != STDOUT)
 		return -1;
-	for (int i = 0; i < len; ++i) {
+	struct proc *p = curr_proc();
+	char str[MAX_STR_LEN];
+	int size = copyinstr(p->pagetable, str, va, MIN(len, MAX_STR_LEN));
+	debugf("size = %d", size);
+	for (int i = 0; i < size; ++i) {
 		console_putchar(str[i]);
 	}
-	return len;
+	return size;
 }
 
 __attribute__((noreturn)) void sys_exit(int code)
@@ -28,14 +33,35 @@ uint64 sys_sched_yield()
 	return 0;
 }
 
-uint64 sys_gettimeofday(TimeVal *val, int _tz)
+uint64 sys_gettimeofday(TimeVal *val, int _tz) // TODO: implement sys_gettimeofday in pagetable. (VA to PA)
 {
-	uint64 cycle = get_cycle();
-	val->sec = cycle / CPU_FREQ;
-	val->usec = (cycle % CPU_FREQ) * 1000000 / CPU_FREQ;
+	// YOUR CODE
+	val->sec = 0;
+	val->usec = 0;
+
+	/* The code in `ch3` will leads to memory bugs*/
+
+	// uint64 cycle = get_cycle();
+	// val->sec = cycle / CPU_FREQ;
+	// val->usec = (cycle % CPU_FREQ) * 1000000 / CPU_FREQ;
 	return 0;
 }
 
+uint64 sys_sbrk(int n)
+{
+	uint64 addr;
+        struct proc *p = curr_proc();
+        addr = p->program_brk;
+        if(growproc(n) < 0)
+                return -1;
+        return addr;	
+}
+
+
+
+// TODO: add support for mmap and munmap syscall.
+// hint: read through docstrings in vm.c. Watching CH4 video may also help.
+// Note the return value and PTE flags (especially U,X,W,R)
 /*
 * LAB1: you may need to define sys_task_info here
 */
@@ -55,7 +81,7 @@ void syscall()
 	*/
 	switch (id) {
 	case SYS_write:
-		ret = sys_write(args[0], (char *)args[1], args[2]);
+		ret = sys_write(args[0], args[1], args[2]);
 		break;
 	case SYS_exit:
 		sys_exit(args[0]);
@@ -65,6 +91,9 @@ void syscall()
 		break;
 	case SYS_gettimeofday:
 		ret = sys_gettimeofday((TimeVal *)args[0], args[1]);
+		break;
+	case SYS_sbrk:
+		ret = sys_sbrk(args[0]);
 		break;
 	/*
 	* LAB1: you may need to add SYS_taskinfo case here

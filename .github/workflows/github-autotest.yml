@@ -1,6 +1,6 @@
 name: auto-test
 
-on:
+on: 
   push:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
         image: duskmoon/dev-env:ucore-ci
     steps:
       - uses: actions/checkout@v3
-      - run: git clone https://github.com/LearningOS/uCore-Tutorial-Checker-2023S.git ucore-tutorial-ci
+      - run: git clone https://github.com/LearningOS/uCore-Tutorial-Checker-2023S.git ucore-tutorial-ci 
       - run: git clone https://github.com/LearningOS/uCore-Tutorial-Test-2023S.git ucore-tutorial-ci/workplace/user
       - name: run test
         id: tester

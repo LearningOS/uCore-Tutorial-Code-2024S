@@ -211,7 +211,7 @@
 #define SYS_sendmsg 211
 #define SYS_recvmsg 212
 #define SYS_readahead 213
-#define SYS_brk 214
+#define SYS_sbrk 214
 #define SYS_munmap 215
 #define SYS_mremap 216
 #define SYS_add_key 217
@@ -280,6 +280,8 @@
 /*
 * LAB1: you may need to define SYS_task_info here
 */
+
+
 #define SYS_pidfd_send_signal 424
 #define SYS_io_uring_setup 425
 #define SYS_io_uring_enter 426
