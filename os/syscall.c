@@ -1,7 +1,8 @@
-#include "syscall.h"
 #include "console.h"
 #include "defs.h"
 #include "loader.h"
+#include "sync.h"
+#include "syscall.h"
 #include "syscall_ids.h"
 #include "timer.h"
 #include "trap.h"
@@ -146,18 +147,6 @@ uint64 sys_wait(int pid, uint64 va)
 	return wait(pid, code);
 }
 
-uint64 sys_spawn(uint64 va)
-{
-	// TODO: your job is to complete the sys call
-	return -1;
-}
-
-uint64 sys_set_priority(long long prio)
-{
-	// TODO: your job is to complete the sys call
-	return -1;
-}
-
 uint64 sys_pipe(uint64 fdarray)
 {
 	struct proc *p = curr_proc();
@@ -213,45 +202,179 @@ uint64 sys_close(int fd)
 	return 0;
 }
 
-uint64 sys_sbrk(int n)
+int sys_thread_create(uint64 entry, uint64 arg)
 {
-	uint64 addr;
 	struct proc *p = curr_proc();
-	addr = p->program_brk;
-	if (growproc(n) < 0)
+	int tid = allocthread(p, entry, 1);
+	if (tid < 0) {
+		errorf("fail to create thread");
 		return -1;
-	return addr;
+	}
+	struct thread *t = &p->threads[tid];
+	t->trapframe->a0 = arg;
+	t->state = RUNNABLE;
+	add_task(t);
+	return tid;
 }
 
-int sys_fstat(int fd, uint64 stat)
+int sys_gettid()
 {
-	//TODO: your job is to complete the syscall
-	return -1;
+	return curr_thread()->tid;
 }
 
-int sys_linkat(int olddirfd, uint64 oldpath, int newdirfd, uint64 newpath,
-	       uint64 flags)
+int sys_waittid(int tid)
 {
-	//TODO: your job is to complete the syscall
-	return -1;
+	if (tid < 0 || tid >= NTHREAD) {
+		errorf("unexpected tid %d", tid);
+		return -1;
+	}
+	struct thread *t = &curr_proc()->threads[tid];
+	if (t->state == T_UNUSED || tid == curr_thread()->tid) {
+		return -1;
+	}
+	if (t->state != EXITED) {
+		return -2;
+	}
+	memset((void *)t->kstack, 7, KSTACK_SIZE);
+	t->tid = -1;
+	t->state = T_UNUSED;
+	return t->exit_code;
 }
 
-int sys_unlinkat(int dirfd, uint64 name, uint64 flags)
+/*
+*	LAB5: (3) In the TA's reference implementation, here defines funtion
+*					int deadlock_detect(const int available[LOCK_POOL_SIZE],
+*						const int allocation[NTHREAD][LOCK_POOL_SIZE],
+*						const int request[NTHREAD][LOCK_POOL_SIZE])
+*				for both mutex and semaphore detect, you can also
+*				use this idea or just ignore it.
+*/
+
+int sys_mutex_create(int blocking)
 {
-	//TODO: your job is to complete the syscall
-	return -1;
+	struct mutex *m = mutex_create(blocking);
+	if (m == NULL) {
+		errorf("fail to create mutex: out of resource");
+		return -1;
+	}
+	// LAB5: (4-1) You may want to maintain some variables for detect here
+	int mutex_id = m - curr_proc()->mutex_pool;
+	debugf("create mutex %d", mutex_id);
+	return mutex_id;
 }
+
+int sys_mutex_lock(int mutex_id)
+{
+	if (mutex_id < 0 || mutex_id >= curr_proc()->next_mutex_id) {
+		errorf("Unexpected mutex id %d", mutex_id);
+		return -1;
+	}
+	// LAB5: (4-1) You may want to maintain some variables for detect
+	//       or call your detect algorithm here
+	mutex_lock(&curr_proc()->mutex_pool[mutex_id]);
+	return 0;
+}
+
+int sys_mutex_unlock(int mutex_id)
+{
+	if (mutex_id < 0 || mutex_id >= curr_proc()->next_mutex_id) {
+		errorf("Unexpected mutex id %d", mutex_id);
+		return -1;
+	}
+	// LAB5: (4-1) You may want to maintain some variables for detect here
+	mutex_unlock(&curr_proc()->mutex_pool[mutex_id]);
+	return 0;
+}
+
+int sys_semaphore_create(int res_count)
+{
+	struct semaphore *s = semaphore_create(res_count);
+	if (s == NULL) {
+		errorf("fail to create semaphore: out of resource");
+		return -1;
+	}
+	// LAB5: (4-2) You may want to maintain some variables for detect here
+	int sem_id = s - curr_proc()->semaphore_pool;
+	debugf("create semaphore %d", sem_id);
+	return sem_id;
+}
+
+int sys_semaphore_up(int semaphore_id)
+{
+	if (semaphore_id < 0 ||
+	    semaphore_id >= curr_proc()->next_semaphore_id) {
+		errorf("Unexpected semaphore id %d", semaphore_id);
+		return -1;
+	}
+	// LAB5: (4-2) You may want to maintain some variables for detect here
+	semaphore_up(&curr_proc()->semaphore_pool[semaphore_id]);
+	return 0;
+}
+
+int sys_semaphore_down(int semaphore_id)
+{
+	if (semaphore_id < 0 ||
+	    semaphore_id >= curr_proc()->next_semaphore_id) {
+		errorf("Unexpected semaphore id %d", semaphore_id);
+		return -1;
+	}
+	// LAB5: (4-2) You may want to maintain some variables for detect
+	//       or call your detect algorithm here
+	semaphore_down(&curr_proc()->semaphore_pool[semaphore_id]);
+	return 0;
+}
+
+int sys_condvar_create()
+{
+	struct condvar *c = condvar_create();
+	if (c == NULL) {
+		errorf("fail to create condvar: out of resource");
+		return -1;
+	}
+	int cond_id = c - curr_proc()->condvar_pool;
+	debugf("create condvar %d", cond_id);
+	return cond_id;
+}
+
+int sys_condvar_signal(int cond_id)
+{
+	if (cond_id < 0 || cond_id >= curr_proc()->next_condvar_id) {
+		errorf("Unexpected condvar id %d", cond_id);
+		return -1;
+	}
+	cond_signal(&curr_proc()->condvar_pool[cond_id]);
+	return 0;
+}
+
+int sys_condvar_wait(int cond_id, int mutex_id)
+{
+	if (cond_id < 0 || cond_id >= curr_proc()->next_condvar_id) {
+		errorf("Unexpected condvar id %d", cond_id);
+		return -1;
+	}
+	if (mutex_id < 0 || mutex_id >= curr_proc()->next_mutex_id) {
+		errorf("Unexpected mutex id %d", mutex_id);
+		return -1;
+	}
+	cond_wait(&curr_proc()->condvar_pool[cond_id],
+		  &curr_proc()->mutex_pool[mutex_id]);
+	return 0;
+}
+
+// LAB5: (2) you may need to define function enable_deadlock_detect here
 
 extern char trap_page[];
 
 void syscall()
 {
-	struct trapframe *trapframe = curr_proc()->trapframe;
+	struct trapframe *trapframe = curr_thread()->trapframe;
 	int id = trapframe->a7, ret;
 	uint64 args[6] = { trapframe->a0, trapframe->a1, trapframe->a2,
 			   trapframe->a3, trapframe->a4, trapframe->a5 };
-	tracef("syscall %d args = [%x, %x, %x, %x, %x, %x]", id, args[0],
-	       args[1], args[2], args[3], args[4], args[5]);
+	if (id != SYS_write && id != SYS_read && id != SYS_sched_yield) {
+		debugf("syscall %d args = [%x, %x, %x, %x, %x, %x]", id,
+		       args[0], args[1], args[2], args[3], args[4], args[5]);
+	}
 	switch (id) {
 	case SYS_write:
 		ret = sys_write(args[0], args[1], args[2]);
@@ -268,6 +391,9 @@ void syscall()
 	case SYS_exit:
 		sys_exit(args[0]);
 		// __builtin_unreachable();
+	// case SYS_nanosleep:
+	// 	ret = sys_nanosleep(args[0]);
+	// 	break;
 	case SYS_sched_yield:
 		ret = sys_sched_yield();
 		break;
@@ -292,24 +418,49 @@ void syscall()
 	case SYS_pipe2:
 		ret = sys_pipe(args[0]);
 		break;
-	case SYS_fstat:
-		ret = sys_fstat(args[0], args[1]);
+	case SYS_thread_create:
+		ret = sys_thread_create(args[0], args[1]);
 		break;
-	case SYS_linkat:
-		ret = sys_linkat(args[0], args[1], args[2], args[3], args[4]);
+	case SYS_gettid:
+		ret = sys_gettid();
 		break;
-	case SYS_unlinkat:
-		ret = sys_unlinkat(args[0], args[1], args[2]);
-	case SYS_spawn:
-		ret = sys_spawn(args[0]);
+	case SYS_waittid:
+		ret = sys_waittid(args[0]);
 		break;
-	case SYS_sbrk:
-		ret = sys_sbrk(args[0]);
+	case SYS_mutex_create:
+		ret = sys_mutex_create(args[0]);
 		break;
+	case SYS_mutex_lock:
+		ret = sys_mutex_lock(args[0]);
+		break;
+	case SYS_mutex_unlock:
+		ret = sys_mutex_unlock(args[0]);
+		break;
+	case SYS_semaphore_create:
+		ret = sys_semaphore_create(args[0]);
+		break;
+	case SYS_semaphore_up:
+		ret = sys_semaphore_up(args[0]);
+		break;
+	case SYS_semaphore_down:
+		ret = sys_semaphore_down(args[0]);
+		break;
+	case SYS_condvar_create:
+		ret = sys_condvar_create();
+		break;
+	case SYS_condvar_signal:
+		ret = sys_condvar_signal(args[0]);
+		break;
+	case SYS_condvar_wait:
+		ret = sys_condvar_wait(args[0], args[1]);
+		break;
+	// LAB5: (2) you may need to add case SYS_enable_deadlock_detect here
 	default:
 		ret = -1;
 		errorf("unknown syscall %d", id);
 	}
-	trapframe->a0 = ret;
-	tracef("syscall ret %d", ret);
+	curr_thread()->trapframe->a0 = ret;
+	if (id != SYS_write && id != SYS_read && id != SYS_sched_yield) {
+		debugf("syscall %d ret %d", id, ret);
+	}
 }

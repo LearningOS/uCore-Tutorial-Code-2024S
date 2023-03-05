@@ -66,14 +66,13 @@ int show_all_files()
 }
 
 //Create a new empty file based on path and type and return its inode;
-
 //if the file under the path exists, return its inode;
-
 //returns 0 if the type of file to be created is not T_file
 static struct inode *create(char *path, short type)
 {
 	struct inode *ip, *dp;
-	dp = root_dir(); //Remember that the root_inode is open in this step,so it needs closing then.
+	//Remember that the root_inode is open in this step,so it needs closing then.
+	dp = root_dir();
 	ivalid(dp);
 	if ((ip = dirlookup(dp, path, 0)) != 0) {
 		warnf("create a exist file\n");
@@ -99,9 +98,7 @@ static struct inode *create(char *path, short type)
 }
 
 //A process creates or opens a file according to its path, returning the file descriptor of the created or opened file.
-
 //If omode is O_CREATE, create a new file
-
 //if omode if the others,open a created file.
 int fileopen(char *path, uint64 omode)
 {
@@ -122,6 +119,8 @@ int fileopen(char *path, uint64 omode)
 	if (ip->type != T_FILE)
 		panic("unsupported file inode type\n");
 	if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0) {
+		//Assign a system-level table entry to a newly created or opened file
+		//and then create a file descriptor that points to it
 		if (f)
 			fileclose(f);
 		iput(ip);

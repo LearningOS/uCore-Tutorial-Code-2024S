@@ -139,6 +139,17 @@ int mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
 	return 0;
 }
 
+int uvmmap(pagetable_t pagetable, uint64 va, uint64 npages, int perm)
+{
+	for (int i = 0; i < npages; ++i) {
+		if (mappages(pagetable, va + i * 0x1000, 0x1000,
+			     (uint64)kalloc(), perm)) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
 // Remove npages of mappings starting from va. va must be
 // page-aligned. The mappings must exist.
 // Optionally free the physical memory.
@@ -167,7 +178,7 @@ void uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 
 // create an empty user page table.
 // returns 0 if out of memory.
-pagetable_t uvmcreate(uint64 trapframe)
+pagetable_t uvmcreate()
 {
 	pagetable_t pagetable;
 	pagetable = (pagetable_t)kalloc();
@@ -178,10 +189,6 @@ pagetable_t uvmcreate(uint64 trapframe)
 	memset(pagetable, 0, PGSIZE);
 	if (mappages(pagetable, TRAMPOLINE, PAGE_SIZE, (uint64)trampoline,
 		     PTE_R | PTE_X) < 0) {
-		panic("mappages fail");
-	}
-	if (mappages(pagetable, TRAPFRAME, PGSIZE, trapframe, PTE_R | PTE_W) <
-	    0) {
 		panic("mappages fail");
 	}
 	return pagetable;
@@ -364,47 +371,3 @@ int either_copyin(int user_src, uint64 src, char *dst, uint64 len)
 		return 0;
 	}
 }
-// Allocate PTEs and physical memory to grow process from oldsz to
-// newsz, which need not be page aligned.  Returns new size or 0 on error.
-uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
-{
-        char *mem;
-        uint64 a;
-
-        if(newsz < oldsz)
-                return oldsz;
-
-        oldsz = PGROUNDUP(oldsz);
-        for(a = oldsz; a < newsz; a += PGSIZE){
-                mem = kalloc();
-                if(mem == 0){
-                        uvmdealloc(pagetable, a, oldsz);
-                        return 0;
-                }
-                memset(mem, 0, PGSIZE);
-                if(mappages(pagetable, a, PGSIZE, (uint64)mem, PTE_R|PTE_U|xperm) != 0){
-                        kfree(mem);
-                        uvmdealloc(pagetable, a, oldsz);
-                        return 0;
-                }
-        }
-        return newsz;
-}
-
-// Deallocate user pages to bring the process size from oldsz to
-// newsz.  oldsz and newsz need not be page-aligned, nor does newsz
-// need to be less than oldsz.  oldsz can be larger than the actual
-// process size.  Returns the new process size.
-uint64 uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
-{
-        if(newsz >= oldsz)
-                return oldsz;
-
-        if(PGROUNDUP(newsz) < PGROUNDUP(oldsz)){
-                int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
-                uvmunmap(pagetable, PGROUNDUP(newsz), npages, 1);
-        }
-
-        return newsz;
-}
-

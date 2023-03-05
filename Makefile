@@ -93,7 +93,7 @@ build/kernel: $(OBJS) os/kernel.ld
 
 clean:
 	rm -rf $(BUILDDIR) os/initproc.S
-	rm -f $(F)/*.img
+	rm $(F)/*.img
 
 # BOARD
 BOARD		?= qemu
