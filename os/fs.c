@@ -428,8 +428,6 @@ int dirlink(struct inode *dp, char *name, uint inum)
 	return 0;
 }
 
-// LAB4: You may want to add dirunlink here
-
 //Return the inode of the root directory
 struct inode *root_dir()
 {

@@ -30,6 +30,9 @@ void fileclose(struct file *f)
 	case FD_STDIO:
 		// Do nothing
 		break;
+	case FD_PIPE:
+		pipeclose(f->pipe, f->writable);
+		break;
 	case FD_INODE:
 		iput(f->ip);
 		break;
@@ -63,7 +66,9 @@ int show_all_files()
 }
 
 //Create a new empty file based on path and type and return its inode;
+
 //if the file under the path exists, return its inode;
+
 //returns 0 if the type of file to be created is not T_file
 static struct inode *create(char *path, short type)
 {
@@ -94,7 +99,9 @@ static struct inode *create(char *path, short type)
 }
 
 //A process creates or opens a file according to its path, returning the file descriptor of the created or opened file.
+
 //If omode is O_CREATE, create a new file
+
 //if omode if the others,open a created file.
 int fileopen(char *path, uint64 omode)
 {
@@ -114,10 +121,7 @@ int fileopen(char *path, uint64 omode)
 	}
 	if (ip->type != T_FILE)
 		panic("unsupported file inode type\n");
-	if ((f = filealloc()) == 0 ||
-	    (fd = fdalloc(f)) <
-		    0) { //Assign a system-level table entry to a newly created or opened file
-		//and then create a file descriptor that points to it
+	if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0) {
 		if (f)
 			fileclose(f);
 		iput(ip);
