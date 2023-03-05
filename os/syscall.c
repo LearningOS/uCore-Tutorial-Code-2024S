@@ -6,34 +6,69 @@
 #include "timer.h"
 #include "trap.h"
 
-uint64 sys_write(int fd, uint64 va, uint len)
+uint64 console_write(uint64 va, uint64 len)
 {
-	debugf("sys_write fd = %d str = %x, len = %d", fd, va, len);
-	if (fd != STDOUT)
-		return -1;
 	struct proc *p = curr_proc();
 	char str[MAX_STR_LEN];
 	int size = copyinstr(p->pagetable, str, va, MIN(len, MAX_STR_LEN));
-	debugf("size = %d", size);
+	tracef("write size = %d", size);
 	for (int i = 0; i < size; ++i) {
 		console_putchar(str[i]);
 	}
-	return size;
+	return len;
 }
 
-uint64 sys_read(int fd, uint64 va, uint64 len)
+uint64 console_read(uint64 va, uint64 len)
 {
-	debugf("sys_read fd = %d str = %x, len = %d", fd, va, len);
-	if (fd != STDIN)
-		return -1;
 	struct proc *p = curr_proc();
 	char str[MAX_STR_LEN];
+	tracef("read size = %d", len);
 	for (int i = 0; i < len; ++i) {
 		int c = consgetc();
 		str[i] = c;
 	}
 	copyout(p->pagetable, va, str, len);
 	return len;
+}
+
+uint64 sys_write(int fd, uint64 va, uint64 len)
+{
+	if (fd < 0 || fd > FD_BUFFER_SIZE)
+		return -1;
+	struct proc *p = curr_proc();
+	struct file *f = p->files[fd];
+	if (f == NULL) {
+		errorf("invalid fd %d\n", fd);
+		return -1;
+	}
+	switch (f->type) {
+	case FD_STDIO:
+		return console_write(va, len);
+	case FD_INODE:
+		return inodewrite(f, va, len);
+	default:
+		panic("unknown file type %d\n", f->type);
+	}
+}
+
+uint64 sys_read(int fd, uint64 va, uint64 len)
+{
+	if (fd < 0 || fd > FD_BUFFER_SIZE)
+		return -1;
+	struct proc *p = curr_proc();
+	struct file *f = p->files[fd];
+	if (f == NULL) {
+		errorf("invalid fd %d\n", fd);
+		return -1;
+	}
+	switch (f->type) {
+	case FD_STDIO:
+		return console_read(va, len);
+	case FD_INODE:
+		return inoderead(f, va, len);
+	default:
+		panic("unknown file type %d\n", f->type);
+	}
 }
 
 __attribute__((noreturn)) void sys_exit(int code)
@@ -72,17 +107,32 @@ uint64 sys_getppid()
 
 uint64 sys_clone()
 {
-	debugf("fork!\n");
+	debugf("fork!");
 	return fork();
 }
 
-uint64 sys_exec(uint64 va)
+static inline uint64 fetchaddr(pagetable_t pagetable, uint64 va)
+{
+	uint64 *addr = (uint64 *)useraddr(pagetable, va);
+	return *addr;
+}
+
+uint64 sys_exec(uint64 path, uint64 uargv)
 {
 	struct proc *p = curr_proc();
-	char name[200];
-	copyinstr(p->pagetable, name, va, 200);
-	debugf("sys_exec %s\n", name);
-	return exec(name);
+	char name[MAX_STR_LEN];
+	copyinstr(p->pagetable, name, path, MAX_STR_LEN);
+	uint64 arg;
+	static char strpool[MAX_ARG_NUM][MAX_STR_LEN];
+	char *argv[MAX_ARG_NUM];
+	int i;
+	for (i = 0; uargv && (arg = fetchaddr(p->pagetable, uargv));
+	     uargv += sizeof(char *), i++) {
+		copyinstr(p->pagetable, (char *)strpool[i], arg, MAX_STR_LEN);
+		argv[i] = (char *)strpool[i];
+	}
+	argv[i] = NULL;
+	return exec(name, (char **)argv);
 }
 
 uint64 sys_wait(int pid, uint64 va)
@@ -98,20 +148,62 @@ uint64 sys_spawn(uint64 va)
 	return -1;
 }
 
-uint64 sys_set_priority(long long prio){
-    // TODO: your job is to complete the sys call
-    return -1;
+uint64 sys_set_priority(long long prio)
+{
+	// TODO: your job is to complete the sys call
+	return -1;
 }
 
+uint64 sys_openat(uint64 va, uint64 omode, uint64 _flags)
+{
+	struct proc *p = curr_proc();
+	char path[200];
+	copyinstr(p->pagetable, path, va, 200);
+	return fileopen(path, omode);
+}
+
+uint64 sys_close(int fd)
+{
+	if (fd < 0 || fd > FD_BUFFER_SIZE)
+		return -1;
+	struct proc *p = curr_proc();
+	struct file *f = p->files[fd];
+	if (f == NULL) {
+		errorf("invalid fd %d", fd);
+		return -1;
+	}
+	fileclose(f);
+	p->files[fd] = 0;
+	return 0;
+}
+
+int sys_fstat(int fd, uint64 stat)
+{
+	//TODO: your job is to complete the syscall
+	return -1;
+}
+
+int sys_linkat(int olddirfd, uint64 oldpath, int newdirfd, uint64 newpath,
+	       uint64 flags)
+{
+	//TODO: your job is to complete the syscall
+	return -1;
+}
+
+int sys_unlinkat(int dirfd, uint64 name, uint64 flags)
+{
+	//TODO: your job is to complete the syscall
+	return -1;
+}
 
 uint64 sys_sbrk(int n)
 {
-        uint64 addr;
-        struct proc *p = curr_proc();
-        addr = p->program_brk;
-        if(growproc(n) < 0)
-                return -1;
-        return addr;
+	uint64 addr;
+	struct proc *p = curr_proc();
+	addr = p->program_brk;
+	if (growproc(n) < 0)
+		return -1;
+	return addr;
 }
 
 extern char trap_page[];
@@ -130,6 +222,12 @@ void syscall()
 		break;
 	case SYS_read:
 		ret = sys_read(args[0], args[1], args[2]);
+		break;
+	case SYS_openat:
+		ret = sys_openat(args[0], args[1], args[2]);
+		break;
+	case SYS_close:
+		ret = sys_close(args[0]);
 		break;
 	case SYS_exit:
 		sys_exit(args[0]);
@@ -150,17 +248,26 @@ void syscall()
 		ret = sys_clone();
 		break;
 	case SYS_execve:
-		ret = sys_exec(args[0]);
+		ret = sys_exec(args[0], args[1]);
 		break;
 	case SYS_wait4:
 		ret = sys_wait(args[0], args[1]);
+		break;
+	case SYS_fstat:
+		ret = sys_fstat(args[0], args[1]);
+		break;
+	case SYS_linkat:
+		ret = sys_linkat(args[0], args[1], args[2], args[3], args[4]);
+		break;
+	case SYS_unlinkat:
+		ret = sys_unlinkat(args[0], args[1], args[2]);
 		break;
 	case SYS_spawn:
 		ret = sys_spawn(args[0]);
 		break;
 	case SYS_sbrk:
-                ret = sys_sbrk(args[0]);
-                break;
+		ret = sys_sbrk(args[0]);
+		break;
 	default:
 		ret = -1;
 		errorf("unknown syscall %d", id);

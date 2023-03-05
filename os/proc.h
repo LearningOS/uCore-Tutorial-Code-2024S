@@ -3,7 +3,6 @@
 
 #include "riscv.h"
 #include "types.h"
-#include "queue.h"
 
 #define NPROC (512)
 #define FD_BUFFER_SIZE (16)
@@ -44,7 +43,8 @@ struct proc {
 	uint64 max_page;
 	struct proc *parent; // Parent process
 	uint64 exit_code;
-	struct file *files[FD_BUFFER_SIZE];
+	struct file *files
+		[FD_BUFFER_SIZE]; //File descriptor table, using to record the files opened by the process
 	uint64 program_brk;
 	uint64 heap_bottom;
 };
@@ -57,12 +57,14 @@ void scheduler() __attribute__((noreturn));
 void sched();
 void yield();
 int fork();
-int exec(char *);
+int exec(char *, char **);
 int wait(int, int *);
 void add_task(struct proc *);
 struct proc *pop_task();
 struct proc *allocproc();
 int fdalloc(struct file *);
+int init_stdio(struct proc *);
+int push_argv(struct proc *, char **);
 // swtch.S
 void swtch(struct context *, struct context *);
 
