@@ -9,14 +9,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Mirror + trigger CI
-      uses: Gallium70/gitlab-mirror-and-ci-action@master
+      uses: tkf2019/gitlab-mirror-and-ci-action@master
       with:
-        args: "https://git.tsinghua.edu.cn/os-lab/2023s/public/ucore-tutorial-code-2023s"
+        args: "https://git.tsinghua.edu.cn/os-lab/2023a/public/ucore-tutorial-code-2023a"
       env:
         GITLAB_HOSTNAME: "git.tsinghua.edu.cn"
-        GITLAB_PROJECT_ID: "20789"
-        GITLAB_PROJECT_NAME: "ucore-tutorial-code-2023s"
+        GITLAB_PROJECT_ID: "26336"
+        GITLAB_PROJECT_NAME: "ucore-tutorial-code-2023a"
         GITLAB_PROJECT_TOKEN: ${{secrets.GITLAB_PROJECT_TOKEN}}
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
