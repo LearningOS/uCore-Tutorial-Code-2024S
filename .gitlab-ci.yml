@@ -7,6 +7,6 @@ stages:
 test-code-job:
   stage: test
   script:
-    - git clone https://token:${UCORE_CHECKER_REPO_READ_TOKEN_2024S}@git.tsinghua.edu.cn/os-lab/2024S/ta/ucore-tutorial-checker-2024S.git ucore-tutorial-ci
-    - git clone https://token:${UCORE_TEST_REPO_READ_TOKEN_2024S}@git.tsinghua.edu.cn/os-lab/2024S/public/ucore-tutorial-test-2024S.git ucore-tutorial-ci/workplace/user
+    - git clone https://token:${UCORE_CHECKER_REPO_READ_TOKEN_2024S}@git.tsinghua.edu.cn/os-lab/2024s/ta/ucore-tutorial-checker.git ucore-tutorial-ci
+    - git clone https://token:${UCORE_TEST_REPO_READ_TOKEN_2024S}@git.tsinghua.edu.cn/os-lab/2024s/public/ucore-tutorial-test.git ucore-tutorial-ci/workplace/user
     - cd ucore-tutorial-ci && make test CHAPTER=`echo $CI_COMMIT_REF_NAME | grep -oP 'ch\K[0-9]'`
