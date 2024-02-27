@@ -13,10 +13,10 @@ jobs:
     - name: Mirror + trigger CI
       uses: tkf2019/gitlab-mirror-and-ci-action@master
       with:
-        args: "https://git.tsinghua.edu.cn/os-lab/2024s/public/ucore-tutorial-code"
+        args: "https://git.tsinghua.edu.cn/os-lab/2024s/public/ucore-tutorial-code-2024s"
       env:
         GITLAB_HOSTNAME: "git.tsinghua.edu.cn"
         GITLAB_PROJECT_ID: "29092"
-        GITLAB_PROJECT_NAME: "ucore-tutorial-code"
+        GITLAB_PROJECT_NAME: "ucore-tutorial-code-2024s"
         GITLAB_PROJECT_TOKEN: ${{secrets.GITLAB_PROJECT_TOKEN}}
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
